@@ -33,7 +33,11 @@ RUN mkdir -p sessions videos channels \
     && chown -R www-data:www-data sessions videos channels \
     && chmod -R 775 sessions videos channels
 
+# Set default memory limit
+ENV PHP_MEMORY_LIMIT=512M
+
 # Expose port 80
 EXPOSE 80
 
-CMD ["apache2-foreground"]
+# Use a shell to write the environment variable to php.ini at runtime
+CMD ["sh", "-c", "echo memory_limit=$PHP_MEMORY_LIMIT > /usr/local/etc/php/conf.d/memory-limit.ini && apache2-foreground"]

@@ -13,6 +13,7 @@ services:
       - channels:/var/www/html/channels
     environment:
       - HEADLESSVIDX_ADDRESS=xxxx.xxxx.xxxx:xxx
+      - PHP_MEMORY_LIMIT=1024M
     restart: unless-stopped
 
 volumes:
