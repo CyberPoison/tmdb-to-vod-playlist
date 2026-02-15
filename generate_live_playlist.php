@@ -2,21 +2,23 @@
 
 require_once 'config.php';
 
-function channelIdFromName($name) {
+function channelIdFromName($name)
+{
     // Deterministic hash for channel name
     $hash = crc32($name);
     $id = sprintf('%u', $hash); // make unsigned
     return $id % 1000000000;    // under 1 billion
 }
 
-function runLivePlaylistGenerate() {
+function runLivePlaylistGenerate()
+{
     global $INCLUDE_ADULT_VOD;
 
     $include = filter_var($INCLUDE_ADULT_VOD ?? false, FILTER_VALIDATE_BOOLEAN);
 
     $playlistUrl = $include
-        ? 'http://drewlive24.duckdns.org:8081/DrewLive/MergedPlaylist.m3u8'
-        : 'http://drewlive24.duckdns.org:8081/DrewLive/MergedCleanPlaylist.m3u8';
+        ? 'https://iptv-org.github.io/iptv/index.m3u'
+        : 'https://iptv-org.github.io/iptv/index.m3u';
 
     $categoriesFile = __DIR__ . "/channels/get_live_categories.json";
 
@@ -29,11 +31,11 @@ function runLivePlaylistGenerate() {
 
     $lines = explode("\n", $playlist);
 
-    $parsedData  = [];
-    $categories  = [];
+    $parsedData = [];
+    $categories = [];
     $categoryMap = [];
-    $catCounter  = 200;
-    $usedIds     = [];
+    $catCounter = 200;
+    $usedIds = [];
 
     foreach ($lines as $line) {
         $line = trim($line);
@@ -50,17 +52,17 @@ function runLivePlaylistGenerate() {
                 $channelName = $m[1];
             }
 
-            $epgId = $attrs['tvg-id']   ?? '';
-            $logo  = $attrs['tvg-logo'] ?? '';
+            $epgId = $attrs['tvg-id'] ?? '';
+            $logo = $attrs['tvg-logo'] ?? '';
             $group = trim($attrs['group-title'] ?? 'Uncategorized');
 
             if ($channelName && $epgId && $group) {
                 if (!isset($categoryMap[$group])) {
                     $categoryMap[$group] = $catCounter++;
                     $categories[] = [
-                        "category_id"   => (string)$categoryMap[$group],
+                        "category_id" => (string) $categoryMap[$group],
                         "category_name" => $group,
-                        "parent_id"     => 0
+                        "parent_id" => 0
                     ];
                 }
 
@@ -71,26 +73,26 @@ function runLivePlaylistGenerate() {
                 $usedIds[$streamId] = true;
 
                 $parsedData[] = [
-                    "num"                => $streamId,
-                    "name"               => trim($channelName),
-                    "stream_type"        => "live",
-                    "stream_id"          => $streamId,
-                    "stream_icon"        => $logo,
-                    "epg_channel_id"     => $epgId,
-                    "added"              => time(),
-                    "category_id"        => $categoryMap[$group],
-                    "custom_sid"         => "",
-                    "tv_archive"         => 0,
-                    "direct_source"      => "",
-                    "tv_archive_duration"=> 0,
-                    "video_url"          => ""
+                    "num" => $streamId,
+                    "name" => trim($channelName),
+                    "stream_type" => "live",
+                    "stream_id" => $streamId,
+                    "stream_icon" => $logo,
+                    "epg_channel_id" => $epgId,
+                    "added" => time(),
+                    "category_id" => $categoryMap[$group],
+                    "custom_sid" => "",
+                    "tv_archive" => 0,
+                    "direct_source" => "",
+                    "tv_archive_duration" => 0,
+                    "video_url" => ""
                 ];
             }
         } elseif ($line && strpos($line, "#") !== 0) {
             $idx = count($parsedData) - 1;
             if ($idx >= 0) {
                 $parsedData[$idx]["direct_source"] = $line;
-                $parsedData[$idx]["video_url"]     = $line;
+                $parsedData[$idx]["video_url"] = $line;
             }
         }
     }
