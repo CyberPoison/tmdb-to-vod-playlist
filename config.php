@@ -118,13 +118,13 @@ $timeOut = 20; // numerical value only
 // Be sure to grab the entire line including the comma.
 
 $userDefinedOrder = [
-'torrentSites',
-'stremioSites',
-'primewire_tf',
-'autoembed_cc',
-'HeadlessVidX',
- ];
- 
+    'torrentSites',
+    'stremioSites',
+    'primewire_tf',
+    'autoembed_cc',
+    'HeadlessVidX',
+];
+
 /* Archived list
 //'shegu_net_links',
 //'warezcdn_com',
@@ -142,7 +142,7 @@ $userDefinedOrder = [
 //'frembed_pro',
 //'upMovies_to',
 */
- 
+
 // On my todo list.
 // Language mapping between TMDB and Torrent Site. 
 $languageMapping = [
@@ -175,8 +175,8 @@ $languageMapping = [
         "hr-HR" => "27",   // Croatian (Croatia)
         "other" => "9",    // Other / Multiple
     ],
-	
-	"Glodls" => [
+
+    "Glodls" => [
         "en-US" => "1",    // English (United States)
         "fr-FR" => "2",    // French (France)
         "de-DE" => "3",    // German (Germany)
@@ -195,10 +195,11 @@ $languageMapping = [
         "bn-BD" => "12",   // Bengali (Bangladesh)
         "ta-IN" => "9",    // Tamil (India)
     ]
-	
+
 ];
 
-function locateBaseURL() {
+function locateBaseURL()
+{
     global $userSetHost;
 
     $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off' || $_SERVER['SERVER_PORT'] == 443) ? "https://" : "http://";
@@ -215,22 +216,23 @@ function locateBaseURL() {
 }
 
 
-	
 
-function accessLog() {
+
+function accessLog()
+{
     $logFile = 'access.log';
-	
+
     $urlComponents = parse_url($_SERVER['REQUEST_URI']);
     $queryString = isset($urlComponents['query']) ? $urlComponents['query'] : '';
-	
+
     parse_str($queryString, $queryParams);
-    
+
     if (!isset($queryParams['dev'])) {
         $queryParams['dev'] = 'true'; // Set only if not already set
     }
-	
+
     $newQueryString = http_build_query($queryParams);
-	
+
     $modifiedUri = $urlComponents['path'];
     if (!empty($newQueryString)) {
         $modifiedUri .= '?' . $newQueryString;
@@ -238,11 +240,11 @@ function accessLog() {
     if (isset($urlComponents['fragment'])) {
         $modifiedUri .= '#' . $urlComponents['fragment'];
     }
-    
+
     // Log the data with the modified URI
     $logData = date('Y-m-d H:i:s') . ' ' . $_SERVER['REMOTE_ADDR'] . ' ' . $_SERVER['REQUEST_METHOD'] . ' ' . $modifiedUri . PHP_EOL;
     file_put_contents($logFile, $logData, FILE_APPEND);
 }
 
- 
+
 ?>

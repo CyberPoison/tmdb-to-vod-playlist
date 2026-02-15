@@ -1,0 +1,21 @@
+version: '3.8'
+
+services:
+  php-app:
+    build: .
+    container_name: tmdb-vod-php
+    ports:
+      - "8080:80"
+    volumes:
+      - .:/var/www/html
+      - sessions:/var/www/html/sessions
+      - videos:/var/www/html/videos
+      - channels:/var/www/html/channels
+    environment:
+      - HEADLESSVIDX_ADDRESS=xxxx.xxxx.xxxx:xxx
+    restart: unless-stopped
+
+volumes:
+  sessions:
+  videos:
+  channels:

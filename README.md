@@ -141,6 +141,30 @@ https://github.com/user-attachments/assets/c6af6149-c170-45fc-a6ac-32edd1b3405b
 
 
 
+
+## Docker Deployment
+
+You can now run the entire stack using Docker and Docker Compose.
+
+### Prerequisites
+- Docker and Docker Compose installed.
+
+### Quick Start
+1. Clone the repository.
+2. Configure your `config.php` (or use environment variables for some settings).
+3. Run the following command in the root directory:
+   ```bash
+   docker-compose up -d
+   ```
+4. Access the website at `http://localhost:8080`.
+
+### GitHub Actions
+The project includes a GitHub Actions workflow `.github/workflows/deploy.yml` that automatically builds and pushes the Docker image to GitHub Container Registry (GHCR) on every push to `main`.
+
+### Environment Variables
+The following environment variables can be used to configure the container:
+- `HEADLESSVIDX_ADDRESS`: The address of the HeadlessVidX service (default: `localhost:3202`). In docker-compose, this is set to `headlessvidx:3202`.
+
 # Legal Disclaimer
 
 This script retrieves movie information from TMDB and searches for related content on third-party websites. The legality of streaming or downloading content through these websites is uncertain. Please exercise caution and consider the legal and ethical implications of using this script to access and consume copyrighted content. Always respect copyright laws and the terms of service of the websites you visit.
