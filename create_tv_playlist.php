@@ -7,17 +7,17 @@ require_once 'config.php';
 set_time_limit(0); // Remove PHP's time restriction
 
 if ($GLOBALS['DEBUG'] !== true) {
-    error_reporting(0);
+    error_reporting(0);	
 } else {
-    accessLog();
-}
+	accessLog();
+}	
 
-if (!isset($userSetHost) || empty($userSetHost)) {
-    $domain = 'http://' . $_SERVER['HTTP_HOST'];
+if (!isset($userSetHost) || empty($userSetHost)){
+	$domain = 'http://' . $_SERVER['HTTP_HOST'];	
 } else {
-    $domain = 'http://' . $userSetHost;
+	$domain = 'http://' . $userSetHost;
 }
-$basePath = '/';
+$basePath = '/'; 
 
 // If the script is not running in CLI mode, set the base path
 if (php_sapi_name() != 'cli') {
@@ -37,15 +37,15 @@ fetchSeries($playVodUrl, $language, $apiKey, $totalPages);
 
 function fetchSeries($playVodUrl, $language, $apiKey, $totalPages)
 {
-    global $listType, $outputData, $outputContent, $num;
-
-    //Limit some categories to less items. (This allows the other categories to be populated)
-    $limitTotalPages = ($totalPages > 15) ? 15 : $totalPages;
-
-    // Call the function for on the air
+    global $listType, $outputData, $outputContent, $num;	
+	
+	//Limit some categories to less items. (This allows the other categories to be populated)
+	$limitTotalPages = ($totalPages > 15) ? 15 : $totalPages;
+	
+	// Call the function for on the air
     measureExecutionTime('fetchOnTheAirSeries', $playVodUrl, $language, $apiKey, $limitTotalPages);
-
-    // Call the function for with networks
+	
+	// Call the function for with networks
     measureExecutionTime('fetchSeriesWithNetwork', $playVodUrl, $language, $apiKey, $totalPages);
 
     // Call the function for top rated
@@ -53,12 +53,12 @@ function fetchSeries($playVodUrl, $language, $apiKey, $totalPages)
 
     // Call the function for popular
     measureExecutionTime('fetchPopularSeries', $playVodUrl, $language, $apiKey, $limitTotalPages);
-
-    // Call the function for genres
+	
+	// Call the function for genres
     measureExecutionTime('fetchGenres', $playVodUrl, $language, $apiKey, $totalPages);
 
-    //Save the Json and M3U8 Data
-    file_put_contents('tv_playlist.m3u8', $outputContent);
+    //Save the Json and M3U8 Data (commented out since its not good with tv series).
+    //file_put_contents('tv_playlist.m3u8', $outputContent);
 
     file_put_contents('tv_playlist.json', json_encode($outputData));
 
@@ -81,7 +81,8 @@ function fetchAndHandleErrors($url, $errorMessage)
         } else {
             error_log($errorMessage . ' Request failed');
         }
-    } catch (exception $error) {
+    }
+    catch (exception $error) {
         error_log($errorMessage . ' ' . $error->getMessage());
     }
     return null;
@@ -129,66 +130,66 @@ function fetchSeriesWithNetwork($playVodUrl, $language, $apiKey, $totalPages)
                     if (!isValidSeries($show)) {
                         continue;
                     }
-                    // JSON formatting for each show
-                    if (!isset($show['first_air_date']) || !isset($show['name']) || !isset($show['poster_path']) || !isset($show['id'])) {
-                        continue;
-                    }
-                    if (isset($show['first_air_date'])) {
-                        $dateParts = explode("-", $show['first_air_date']);
-                        $year = $dateParts[0];
-                        $date = $show['first_air_date'];
-                        $timestamp = strtotime($date);
-                    } else {
-                        $date = '1970-01-01';
-                        $year = '1970'; //Set to 1970 since its unknown.
-                        $timestamp = '24034884';
-                    }
+                // JSON formatting for each show
+				if (!isset($show['first_air_date']) || !isset($show['name']) || !isset($show['poster_path']) || !isset($show['id'])) {
+					continue;
+				}
+                if (isset($show['first_air_date'])) {
+                    $dateParts = explode("-", $show['first_air_date']);
+                    $year = $dateParts[0];
+					$date = $show['first_air_date'];
+					$timestamp = strtotime($date);
+                } else { 
+					$date = '1970-01-01';
+                    $year = '1970'; //Set to 1970 since its unknown.
+					$timestamp = '24034884';
+                }
+					
+				  $showData = [
+					"num" => ++$num,
+					"name" =>$show['name'] . ' (' . $year . ')',
+					"series_id" => $show['id'],
+					"cover" => 'https://image.tmdb.org/t/p/original' . $show['poster_path'],
+					"plot" => $show['overview'],
+					"cast" => "",
+					"director" => "",
+					"genre" => "",
+					"releaseDate" => $date,
+					"last_modified" => $timestamp,
+					"rating" => isset($show['vote_average']) ? $show['vote_average'] : 0,
+					"rating_5based" => isset($show['vote_average']) ? ($show['vote_average'] / 2) : 0,
+					"backdrop_path" => [
+					  'https://image.tmdb.org/t/p/original' . $show['backdrop_path']
+					],
+					"youtube_trailer" => "",
+					"episode_run_time" => "",
+					"category_id" => "99999".$networkId
+			  ];
 
-                    $showData = [
-                        "num" => ++$num,
-                        "name" => $show['name'] . ' (' . $year . ')',
-                        "series_id" => $show['id'],
-                        "cover" => 'https://image.tmdb.org/t/p/original' . $show['poster_path'],
-                        "plot" => $show['overview'],
-                        "cast" => "",
-                        "director" => "",
-                        "genre" => "",
-                        "releaseDate" => $date,
-                        "last_modified" => $timestamp,
-                        "rating" => isset($show['vote_average']) ? $show['vote_average'] : 0,
-                        "rating_5based" => isset($show['vote_average']) ? ($show['vote_average'] / 2) : 0,
-                        "backdrop_path" => [
-                            'https://image.tmdb.org/t/p/original' . $show['backdrop_path']
-                        ],
-                        "youtube_trailer" => "",
-                        "episode_run_time" => "",
-                        "category_id" => "99999" . $networkId
-                    ];
+                $id = $show['id'];
 
+                // Check if the movie ID has already been added
+                if (!isset($addedMovieIds[$id])) {
+                    // Mark the movie ID as added
+                    $addedMovieIds[$id] = true;
+
+                    // Add the movie data to the output array
+                    $outputData[] = $showData;
+
+                    // M3U8 formatting for each movie (inside the M3U8 block)
+                    $title = $show['name'];
+                    $year = isset($date) ? substr($date, 0, 4) :
+                        'N/A';
+                    $poster = 'https://image.tmdb.org/t/p/original' . $show['poster_path'];
                     $id = $show['id'];
 
-                    // Check if the movie ID has already been added
-                    if (!isset($addedMovieIds[$id])) {
-                        // Mark the movie ID as added
-                        $addedMovieIds[$id] = true;
+                    // Concatenate to the existing $outputContent using .=
+                    $outputContent .= "#EXTINF:-1 group-title=\"$networkName\" tvg-id=\"$title\" tvg-logo=\"$poster\",$title ($year)\n$playVodUrl?movieId=$id\n\n";
 
-                        // Add the movie data to the output array
-                        $outputData[] = $showData;
-
-                        // M3U8 formatting for each movie (inside the M3U8 block)
-                        $title = $show['name'];
-                        $year = isset($date) ? substr($date, 0, 4) :
-                            'N/A';
-                        $poster = 'https://image.tmdb.org/t/p/original' . $show['poster_path'];
-                        $id = $show['id'];
-
-                        // Concatenate to the existing $outputContent using .=
-                        $outputContent .= "#EXTINF:-1 group-title=\"$networkName\" tvg-id=\"$title\" tvg-logo=\"$poster\",$title ($year)\n$playVodUrl?movieId=$id\n\n";
-
-                    }
                 }
             }
-
+        }
+		
             if ($capturedTotalPages !== null && $page >= $capturedTotalPages) {
                 break; // break out of the loop
             }
@@ -203,61 +204,61 @@ function fetchOnTheAirSeries($playVodUrl, $language, $apiKey, $totalPages)
 {
     global $outputData, $outputContent, $addedMovieIds, $listType, $series_with_origin_country, $num;
     $baseUrl = 'https://api.themoviedb.org/3/tv/on_the_air';
-
-    $capturedTotalPages = null;
+	
+	 $capturedTotalPages = null;
 
     for ($page = 1; $page <= $totalPages; $page++) {
         $url = $baseUrl . "?api_key=$apiKey&include_adult=false&include_null_first_air_dates=false&sort_by=popularity.desc&with_origin_country=$series_with_origin_country&language=$language&page=$page";
         $data = fetchAndHandleErrors($url, 'Request for popular series failed.');
+		
+                    // Set the total pages after the first request
+            if ($page == 1 && isset($data['total_pages'])) {
+                $capturedTotalPages = $data['total_pages'];
+            }
 
-        // Set the total pages after the first request
-        if ($page == 1 && isset($data['total_pages'])) {
-            $capturedTotalPages = $data['total_pages'];
-        }
+            if ($data !== null) {
+                $series = $data['results'];
 
-        if ($data !== null) {
-            $series = $data['results'];
-
-            foreach ($series as $show) {
-                // Skip invalid series
-                if (!isValidSeries($show)) {
-                    continue;
-                }
+                foreach ($series as $show) {
+                    // Skip invalid series
+                    if (!isValidSeries($show)) {
+                        continue;
+                    }
                 // JSON formatting for each show
-                if (!isset($show['first_air_date']) || !isset($show['name']) || !isset($show['poster_path']) || !isset($show['id'])) {
-                    continue;
-                }
+				if (!isset($show['first_air_date']) || !isset($show['name']) || !isset($show['poster_path']) || !isset($show['id'])) {
+					continue;
+				}
                 if (isset($show['first_air_date'])) {
                     $dateParts = explode("-", $show['first_air_date']);
                     $year = $dateParts[0];
-                    $date = $show['first_air_date'];
-                    $timestamp = strtotime($date);
-                } else {
-                    $date = '1970-01-01';
+					$date = $show['first_air_date'];
+					$timestamp = strtotime($date);
+                } else { 
+					$date = '1970-01-01';
                     $year = '1970'; //Set to 1970 since its unknown.
-                    $timestamp = '24034884';
+					$timestamp = '24034884';
                 }
-
-                $showData = [
-                    "num" => ++$num,
-                    "name" => $show['name'] . ' (' . $year . ')',
-                    "series_id" => $show['id'],
-                    "cover" => 'https://image.tmdb.org/t/p/original' . $show['poster_path'],
-                    "plot" => $show['overview'],
-                    "cast" => "",
-                    "director" => "",
-                    "genre" => "",
-                    "releaseDate" => $date,
-                    "last_modified" => $timestamp,
-                    "rating" => isset($show['vote_average']) ? $show['vote_average'] : 0,
-                    "rating_5based" => isset($show['vote_average']) ? ($show['vote_average'] / 2) : 0,
-                    "backdrop_path" => [
-                        'https://image.tmdb.org/t/p/original' . $show['backdrop_path']
-                    ],
-                    "youtube_trailer" => "",
-                    "episode_run_time" => "",
-                    "category_id" => "88883"
-                ];
+					
+				  $showData = [
+					"num" => ++$num,
+					"name" =>$show['name'] . ' (' . $year . ')',
+					"series_id" => $show['id'],
+					"cover" => 'https://image.tmdb.org/t/p/original' . $show['poster_path'],
+					"plot" => $show['overview'],
+					"cast" => "",
+					"director" => "",
+					"genre" => "",
+					"releaseDate" => $date,
+					"last_modified" => $timestamp,
+					"rating" => isset($show['vote_average']) ? $show['vote_average'] : 0,
+					"rating_5based" => isset($show['vote_average']) ? ($show['vote_average'] / 2) : 0,
+					"backdrop_path" => [
+					  'https://image.tmdb.org/t/p/original' . $show['backdrop_path']
+					],
+					"youtube_trailer" => "",
+					"episode_run_time" => "",
+					"category_id" => "88883"
+			  ];
 
                 $id = $show['id'];
 
@@ -282,7 +283,7 @@ function fetchOnTheAirSeries($playVodUrl, $language, $apiKey, $totalPages)
                 }
             }
         }
-        if ($capturedTotalPages !== null && $page >= $capturedTotalPages) {
+		if ($capturedTotalPages !== null && $page >= $capturedTotalPages) {
             break; // break out of the loop
         }
     }
@@ -296,61 +297,61 @@ function fetchPopularSeries($playVodUrl, $language, $apiKey, $totalPages)
 {
     global $outputData, $outputContent, $addedMovieIds, $listType, $series_with_origin_country, $num;
     $baseUrl = 'https://api.themoviedb.org/3/discover/tv';
-
-    $capturedTotalPages = null;
+	
+	 $capturedTotalPages = null;
 
     for ($page = 1; $page <= $totalPages; $page++) {
         $url = $baseUrl . "?api_key=$apiKey&include_adult=false&include_null_first_air_dates=false&sort_by=popularity.desc&with_origin_country=$series_with_origin_country&language=$language&page=$page";
         $data = fetchAndHandleErrors($url, 'Request for popular series failed.');
+		
+                    // Set the total pages after the first request
+            if ($page == 1 && isset($data['total_pages'])) {
+                $capturedTotalPages = $data['total_pages'];
+            }
 
-        // Set the total pages after the first request
-        if ($page == 1 && isset($data['total_pages'])) {
-            $capturedTotalPages = $data['total_pages'];
-        }
+            if ($data !== null) {
+                $series = $data['results'];
 
-        if ($data !== null) {
-            $series = $data['results'];
-
-            foreach ($series as $show) {
-                // Skip invalid series
-                if (!isValidSeries($show)) {
-                    continue;
-                }
+                foreach ($series as $show) {
+                    // Skip invalid series
+                    if (!isValidSeries($show)) {
+                        continue;
+                    }
                 // JSON formatting for each show
-                if (!isset($show['first_air_date']) || !isset($show['name']) || !isset($show['poster_path']) || !isset($show['id'])) {
-                    continue;
-                }
+				if (!isset($show['first_air_date']) || !isset($show['name']) || !isset($show['poster_path']) || !isset($show['id'])) {
+					continue;
+				}
                 if (isset($show['first_air_date'])) {
                     $dateParts = explode("-", $show['first_air_date']);
                     $year = $dateParts[0];
-                    $date = $show['first_air_date'];
-                    $timestamp = strtotime($date);
-                } else {
-                    $date = '1970-01-01';
+					$date = $show['first_air_date'];
+					$timestamp = strtotime($date);
+                } else { 
+					$date = '1970-01-01';
                     $year = '1970'; //Set to 1970 since its unknown.
-                    $timestamp = '24034884';
+					$timestamp = '24034884';
                 }
-
-                $showData = [
-                    "num" => ++$num,
-                    "name" => $show['name'] . ' (' . $year . ')',
-                    "series_id" => $show['id'],
-                    "cover" => 'https://image.tmdb.org/t/p/original' . $show['poster_path'],
-                    "plot" => $show['overview'],
-                    "cast" => "",
-                    "director" => "",
-                    "genre" => "",
-                    "releaseDate" => $date,
-                    "last_modified" => $timestamp,
-                    "rating" => isset($show['vote_average']) ? $show['vote_average'] : 0,
-                    "rating_5based" => isset($show['vote_average']) ? ($show['vote_average'] / 2) : 0,
-                    "backdrop_path" => [
-                        'https://image.tmdb.org/t/p/original' . $show['backdrop_path']
-                    ],
-                    "youtube_trailer" => "",
-                    "episode_run_time" => "",
-                    "category_id" => "88881"
-                ];
+					
+				  $showData = [
+					"num" => ++$num,
+					"name" =>$show['name'] . ' (' . $year . ')',
+					"series_id" => $show['id'],
+					"cover" => 'https://image.tmdb.org/t/p/original' . $show['poster_path'],
+					"plot" => $show['overview'],
+					"cast" => "",
+					"director" => "",
+					"genre" => "",
+					"releaseDate" => $date,
+					"last_modified" => $timestamp,
+					"rating" => isset($show['vote_average']) ? $show['vote_average'] : 0,
+					"rating_5based" => isset($show['vote_average']) ? ($show['vote_average'] / 2) : 0,
+					"backdrop_path" => [
+					  'https://image.tmdb.org/t/p/original' . $show['backdrop_path']
+					],
+					"youtube_trailer" => "",
+					"episode_run_time" => "",
+					"category_id" => "88881"
+			  ];
 
                 $id = $show['id'];
 
@@ -375,7 +376,7 @@ function fetchPopularSeries($playVodUrl, $language, $apiKey, $totalPages)
                 }
             }
         }
-        if ($capturedTotalPages !== null && $page >= $capturedTotalPages) {
+		if ($capturedTotalPages !== null && $page >= $capturedTotalPages) {
             break; // break out of the loop
         }
     }
@@ -389,61 +390,61 @@ function fetchTopRatedSeries($playVodUrl, $language, $apiKey, $totalPages)
 {
     global $outputData, $outputContent, $addedMovieIds, $listType, $series_with_origin_country, $num;
     $baseUrl = 'https://api.themoviedb.org/3/tv/top_rated';
-
-    $capturedTotalPages = null;
+	
+	 $capturedTotalPages = null;
 
     for ($page = 1; $page <= $totalPages; $page++) {
         $url = $baseUrl . "?api_key=$apiKey&include_adult=false&include_null_first_air_dates=false&sort_by=popularity.desc&with_origin_country=$series_with_origin_country&language=$language&page=$page";
         $data = fetchAndHandleErrors($url, 'Request for popular series failed.');
+		
+            // Set the total pages after the first request
+            if ($page == 1 && isset($data['total_pages'])) {
+                $capturedTotalPages = $data['total_pages'];
+            }
 
-        // Set the total pages after the first request
-        if ($page == 1 && isset($data['total_pages'])) {
-            $capturedTotalPages = $data['total_pages'];
-        }
+            if ($data !== null) {
+                $series = $data['results'];
 
-        if ($data !== null) {
-            $series = $data['results'];
-
-            foreach ($series as $show) {
-                // Skip invalid series
-                if (!isValidSeries($show)) {
-                    continue;
-                }
+                foreach ($series as $show) {
+                    // Skip invalid series
+                    if (!isValidSeries($show)) {
+                        continue;
+                    }
                 // JSON formatting for each show
-                if (!isset($show['first_air_date']) || !isset($show['name']) || !isset($show['poster_path']) || !isset($show['id'])) {
-                    continue;
-                }
+				if (!isset($show['first_air_date']) || !isset($show['name']) || !isset($show['poster_path']) || !isset($show['id'])) {
+					continue;
+				}
                 if (isset($show['first_air_date'])) {
                     $dateParts = explode("-", $show['first_air_date']);
                     $year = $dateParts[0];
-                    $date = $show['first_air_date'];
-                    $timestamp = strtotime($date);
-                } else {
-                    $date = '1970-01-01';
+					$date = $show['first_air_date'];
+					$timestamp = strtotime($date);
+                } else { 
+					$date = '1970-01-01';
                     $year = '1970'; //Set to 1970 since its unknown.
-                    $timestamp = '24034884';
+					$timestamp = '24034884';
                 }
-
-                $showData = [
-                    "num" => ++$num,
-                    "name" => $show['name'] . ' (' . $year . ')',
-                    "series_id" => $show['id'],
-                    "cover" => 'https://image.tmdb.org/t/p/original' . $show['poster_path'],
-                    "plot" => $show['overview'],
-                    "cast" => "",
-                    "director" => "",
-                    "genre" => "",
-                    "releaseDate" => $date,
-                    "last_modified" => $timestamp,
-                    "rating" => isset($show['vote_average']) ? $show['vote_average'] : 0,
-                    "rating_5based" => isset($show['vote_average']) ? ($show['vote_average'] / 2) : 0,
-                    "backdrop_path" => [
-                        'https://image.tmdb.org/t/p/original' . $show['backdrop_path']
-                    ],
-                    "youtube_trailer" => "",
-                    "episode_run_time" => "",
-                    "category_id" => "88882"
-                ];
+					
+				  $showData = [
+					"num" => ++$num,
+					"name" =>$show['name'] . ' (' . $year . ')',
+					"series_id" => $show['id'],
+					"cover" => 'https://image.tmdb.org/t/p/original' . $show['poster_path'],
+					"plot" => $show['overview'],
+					"cast" => "",
+					"director" => "",
+					"genre" => "",
+					"releaseDate" => $date,
+					"last_modified" => $timestamp,
+					"rating" => isset($show['vote_average']) ? $show['vote_average'] : 0,
+					"rating_5based" => isset($show['vote_average']) ? ($show['vote_average'] / 2) : 0,
+					"backdrop_path" => [
+					  'https://image.tmdb.org/t/p/original' . $show['backdrop_path']
+					],
+					"youtube_trailer" => "",
+					"episode_run_time" => "",
+					"category_id" => "88882"
+			  ];
 
                 $id = $show['id'];
 
@@ -468,7 +469,7 @@ function fetchTopRatedSeries($playVodUrl, $language, $apiKey, $totalPages)
                 }
             }
         }
-        if ($capturedTotalPages !== null && $page >= $capturedTotalPages) {
+		if ($capturedTotalPages !== null && $page >= $capturedTotalPages) {
             break; // break out of the loop
         }
     }
@@ -478,71 +479,66 @@ function fetchTopRatedSeries($playVodUrl, $language, $apiKey, $totalPages)
 }
 
 // Fetch genres and series for each genre
-function fetchSeriesByGenre(
-    $genreId,
-    $genreName,
-    $playVodUrl,
-    $language,
-    $apiKey,
-    $totalPages
-) {
+function fetchSeriesByGenre($genreId, $genreName, $playVodUrl, $language, $apiKey,
+    $totalPages)
+{
     global $outputData, $outputContent, $addedMovieIds, $listType, $series_with_origin_country, $num;
     $baseUrl = 'https://api.themoviedb.org/3/discover/tv';
-
-    $capturedTotalPages = null;
+	
+	$capturedTotalPages = null;
 
     for ($page = 1; $page <= $totalPages; $page++) {
         $url = $baseUrl . "?api_key=$apiKey&include_adult=false&language=$language&with_origin_country=$series_with_origin_country&with_genres=$genreId&page=$page";
         $data = fetchAndHandleErrors($url, "Request for $genreName series failed.");
-
+		
         // Set the total pages after the first request
-        if ($page == 1 && isset($data['total_pages'])) {
-            $capturedTotalPages = $data['total_pages'];
-        }
+            if ($page == 1 && isset($data['total_pages'])) {
+                $capturedTotalPages = $data['total_pages'];
+            }
 
-        if ($data !== null) {
-            $series = $data['results'];
+            if ($data !== null) {
+                $series = $data['results'];
 
-            foreach ($series as $show) {
-                // Skip invalid series
-                if (!isValidSeries($show)) {
-                    continue;
-                }
+                foreach ($series as $show) {
+                    // Skip invalid series
+                    if (!isValidSeries($show)) {
+                        continue;
+                    }
                 // JSON formatting for each show
-                if (!isset($show['first_air_date']) || !isset($show['name']) || !isset($show['poster_path']) || !isset($show['id'])) {
-                    continue;
-                }
+				if (!isset($show['first_air_date']) || !isset($show['name']) || !isset($show['poster_path']) || !isset($show['id'])) {
+					continue;
+				}
                 if (isset($show['first_air_date'])) {
                     $dateParts = explode("-", $show['first_air_date']);
                     $year = $dateParts[0];
-                    $date = $show['first_air_date'];
-                    $timestamp = strtotime($date);
-                } else {
-                    $date = '1970-01-01';
+					$date = $show['first_air_date'];
+					$timestamp = strtotime($date);
+                } else { 
+					$date = '1970-01-01';
                     $year = '1970'; //Set to 1970 since its unknown.
-                    $timestamp = '24034884';
+					$timestamp = '24034884';
                 }
-
-                $showData = [
-                    "num" => ++$num,
-                    "name" => $show['name'] . ' (' . $year . ')',
-                    "series_id" => $show['id'],
-                    "cover" => 'https://image.tmdb.org/t/p/original' . $show['poster_path'],
-                    "plot" => $show['overview'],
-                    "cast" => "",
-                    "director" => "",
-                    "genre" => "",
-                    "releaseDate" => $date,
-                    "last_modified" => $timestamp,
-                    "rating" => isset($show['vote_average']) ? $show['vote_average'] : 0,
-                    "rating_5based" => isset($show['vote_average']) ? ($show['vote_average'] / 2) : 0,
-                    "backdrop_path" => [
-                        'https://image.tmdb.org/t/p/original' . $show['backdrop_path']
-                    ],
-                    "youtube_trailer" => "",
-                    "episode_run_time" => "",
-                    "category_id" => $genreId
-                ];
+					
+				  $showData = [
+					"num" => ++$num,
+					"name" =>$show['name'] . ' (' . $year . ')',
+					"series_id" => $show['id'],
+					"cover" => 'https://image.tmdb.org/t/p/original' . $show['poster_path'],
+					"plot" => $show['overview'],
+					"cast" => "",
+					"director" => "",
+					"genre" => "",
+					"releaseDate" => $date,
+					"last_modified" => $timestamp,
+					"rating" => isset($show['vote_average']) ? $show['vote_average'] : 0,
+					"rating_5based" => isset($show['vote_average']) ? ($show['vote_average'] / 2) : 0,
+					"backdrop_path" => [
+					  'https://image.tmdb.org/t/p/original' . $show['backdrop_path']
+					],
+					"youtube_trailer" => "",
+					"episode_run_time" => "",
+					"category_id" => $genreId
+			  ];
 
                 $id = $show['id'];
 
@@ -567,7 +563,7 @@ function fetchSeriesByGenre(
                 }
             }
         }
-        if ($capturedTotalPages !== null && $page >= $capturedTotalPages) {
+		if ($capturedTotalPages !== null && $page >= $capturedTotalPages) {
             break; // break out of the loop
         }
     }
@@ -587,23 +583,11 @@ function fetchGenres($playVodUrl, $language, $apiKey, $totalPages)
 
         foreach ($genres as $genre) {
             if ($listType == 'json') {
-                fetchSeriesByGenre(
-                    $genre['id'],
-                    $genre['name'],
-                    $playVodUrl,
-                    $language,
-                    $apiKey,
-                    $totalPages
-                );
+                fetchSeriesByGenre($genre['id'], $genre['name'], $playVodUrl, $language, $apiKey,
+                    $totalPages);
             } else {
-                fetchSeriesByGenre(
-                    $genre['id'],
-                    $genre['name'],
-                    $playVodUrl,
-                    $language,
-                    $apiKey,
-                    $totalPages
-                );
+                fetchSeriesByGenre($genre['id'], $genre['name'], $playVodUrl, $language, $apiKey,
+                    $totalPages);
             }
         }
     }
@@ -611,8 +595,7 @@ function fetchGenres($playVodUrl, $language, $apiKey, $totalPages)
     return;
 }
 
-function measureExecutionTime($func, ...$params)
-{
+function measureExecutionTime($func, ...$params) {
     $start = microtime(true);
 
     call_user_func($func, ...$params);
@@ -627,18 +610,17 @@ function measureExecutionTime($func, ...$params)
     echo "Total Execution Time for $func: " . $minutes . " minute(s) and " . floor($seconds) . "." . sprintf('%03d', $milliseconds) . " second(s)</br>";
 }
 
-function isValidSeries($series)
-{
+function isValidSeries($series) {
     global $minYear;
     // Check if series has a poster image
     if (empty($series['poster_path'])) {
         return false;
     }
-
+    
     // Check first air date year
     $firstAirDate = $series['first_air_date'] ?? '1970-01-01';
-    $year = (int) substr($firstAirDate, 0, 4);
-
+    $year = (int)substr($firstAirDate, 0, 4);
+    
     // Skip series older than minYear
     return $year >= $minYear;
 }
